@@ -2,6 +2,7 @@ package temporarily;
 
 import javax.swing.JPanel;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.border.LineBorder;
 import javax.swing.border.TitledBorder;
 
@@ -14,7 +15,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ActionEvent;
 
 public class ProdInfoModify extends JPanel {
-	private JTextField ProductNoField;
+	private JTextField productNoField;
 	private JTextField originalPriceField;
 	private JTextField priceModifyField;
 
@@ -48,10 +49,10 @@ public class ProdInfoModify extends JPanel {
 		productNoLabel.setHorizontalAlignment(SwingConstants.LEFT);
 		priceModifyPanel.add(productNoLabel);
 
-		ProductNoField = new JTextField();
-		ProductNoField.setBounds(59, 27, 109, 26);
-		priceModifyPanel.add(ProductNoField);
-		ProductNoField.setColumns(10);
+		productNoField = new JTextField();
+		productNoField.setBounds(59, 27, 109, 26);
+		priceModifyPanel.add(productNoField);
+		productNoField.setColumns(10);
 
 		JLabel originalPriceLabel = new JLabel("기존 판매단가 :");
 		originalPriceLabel.setBounds(12, 85, 100, 36);
@@ -67,10 +68,15 @@ public class ProdInfoModify extends JPanel {
 		JButton searchButton = new JButton("조회");
 		searchButton.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent arg0) {
-				String price = "0";
-				myDBcon.searchProduct(ProductNoField.getText());
-				price = myDBcon.getProductPrice().toString();
-				originalPriceField.setText(price);
+				String price;
+				String productNo = productNoField.getText();
+				if(productNo.isEmpty()) {
+					JOptionPane.showMessageDialog(null, "품번을 입력해주세요.");
+				}else {
+					myDBcon.searchProduct(productNo);
+					price = myDBcon.getProductPrice().toString();
+					originalPriceField.setText(price);					
+				}
 			}
 
 		});
@@ -92,11 +98,24 @@ public class ProdInfoModify extends JPanel {
 		updateButton.setBounds(252, 134, 83, 54);
 		priceModifyPanel.add(updateButton);
 		updateButton.addActionListener(new ActionListener() {
+			
+			
 
 			public void actionPerformed(ActionEvent arg0) {
+				String originalPrice = originalPriceField.getText();
 				String priceModify =priceModifyField.getText();
-				String productNo = ProductNoField.getText();
-				myDBcon.updatePrice(priceModify, productNo);
+				String productNo = productNoField.getText();
+				
+				if(originalPrice.isEmpty()) {
+					JOptionPane.showMessageDialog(null, "변경할 품번을 먼저 조회해주세요.");
+				} else {
+					if(priceModify.isEmpty()) {
+						JOptionPane.showMessageDialog(null, "변경할 가격을 입력해주세요.");
+					} else {
+						myDBcon.updatePrice(priceModify, productNo);											
+					}
+				}
+				
 				
 			}
 		});

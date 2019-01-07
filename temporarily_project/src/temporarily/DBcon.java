@@ -39,7 +39,7 @@ public class DBcon {
 	int monthTotalPrice = 0; // 월매출 저장 변수
 	String salesNum = "0"; // 일판매번호 저장변수
 
-	//LocalDate currDate = LocalDate.now(); // 오늘 날짜
+	// LocalDate currDate = LocalDate.now(); // 오늘 날짜
 	LocalDate currDate = LocalDate.of(2018, 11, 1);
 	DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyMMdd");
 	String currDateCode = currDate.format(formatter);
@@ -203,10 +203,11 @@ public class DBcon {
 			e.printStackTrace();
 		}
 	}
+
 	public Integer getDayTotalPrice() {
 		return dayTotalPrice; // 일 총판매금액 SalesReg에 반환
 	}
-	
+
 	/****************************************************************/
 
 	// *판매관리 - 판매등록 - 조회 버튼
@@ -442,244 +443,354 @@ public class DBcon {
 
 	/*************************************************************************/
 	// 신상품등록
-		public void insertProduct(String productCode, String productNo, String productColor, 
-				String productSize, String productPrice) {
+	public void insertProduct(String productCode, String productNo, String productColor, String productSize,
+			String productPrice) {
 
-			String query = "INSERT INTO PRODUCT VALUES(UPPER('" + productCode + "')," + productNo + 
-					",UPPER('" + productColor + "'),UPPER('" + productSize + "')," + productPrice + ")";
-			try {
-				pstmt = con.prepareStatement(query);
-				rs = pstmt.executeQuery();
+		String query1 = "INSERT INTO PRODUCT VALUES(UPPER('" + productCode + "')," + productNo + ",UPPER('"
+				+ productColor + "'),UPPER('" + productSize + "')," + productPrice + ")";
 
-				JOptionPane.showMessageDialog(null, "입력되었습니다.");
+		String query2 = "select p_code from product";
 
-			} catch (SQLException e) {
-				e.printStackTrace();
-				JOptionPane.showMessageDialog(null, "입력오류.");
+		PreparedStatement pstmt1 = null;
+		ResultSet rs1 = null;
+
+		try {
+			pstmt1 = con.prepareStatement(query2);
+			rs1 = pstmt1.executeQuery();
+			int checkCode = 0; // p_code 중복검사
+			
+			while(rs1.next()) {
+				if(productCode.toUpperCase().equals(rs1.getString(1))) {
+					checkCode = 0;
+					break;
+				}else {
+					checkCode = 1;
+				}
 			}
-		}
+			if(checkCode == 0) {
+				JOptionPane.showMessageDialog(null, "해당상품이 이미존재합니다.");
+			}else {
+				pstmt = con.prepareStatement(query1);
+				rs = pstmt.executeQuery();
+				JOptionPane.showMessageDialog(null, "입력되었습니다.");				
+			}
 
-		// 단가수정 - 품번으로 상품가격 조회
-		public void searchProduct(String productNo) {
-			String query = "SELECT DISTINCT P_PRICE FROM PRODUCT WHERE P_NO =" + productNo;
-			try {
-				pstmt = con.prepareStatement(query);
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 단가수정 - 품번으로 상품가격 조회
+	public void searchProduct(String productNo) {
+		String query1 = "SELECT DISTINCT P_PRICE FROM PRODUCT WHERE P_NO =" + productNo;
+		String query2 = "select p_no from product";
+		PreparedStatement pstmt1 = null;
+		ResultSet rs1 = null;
+		
+		try {
+			pstmt1 = con.prepareStatement(query2);
+			rs1 = pstmt1.executeQuery();
+			int checkproductNo = 0; //품번이 존재하는지 검사
+			
+			while(rs1.next()) {
+				if(productNo.equals(rs1.getString(1))) {
+					checkproductNo = 1;
+					break;
+				}else {
+					checkproductNo = 0;
+				}
+			}
+			
+			if(checkproductNo == 1) {
+				pstmt = con.prepareStatement(query1);
 				rs = pstmt.executeQuery();
 				while (rs.next()) {
 					int getPrice = rs.getInt(1);
 					this.productPrice = getPrice;
 					// getPrice에 품번으로 조회한 상품가격을 저장하여 다시 productPrice로 넘겨준다
-				}
-
-			} catch (SQLException e) {
-				e.printStackTrace();
+				}				
+			}else {
+				JOptionPane.showMessageDialog(null, "해당품번이 존재하지않습니다.");
 			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
+	}
+
+	// 단가수정 - 판매단가 수정
+	public void updatePrice(String priceModify, String productNo) {
+		String query1 = "UPDATE PRODUCT SET P_PRICE = " + priceModify + "WHERE P_NO = " + productNo;
+		String query2 = "select p_no from product"; // 품번검사
+		PreparedStatement pstmt1 = null;
+		ResultSet rs1 = null;
 		
-		// 단가수정 - 판매단가 수정
-		public void updatePrice(String priceModify, String productNo) {
-			String query = "UPDATE PRODUCT SET P_PRICE = " + priceModify + "WHERE P_NO = " + productNo;
-
-			try {
-				pstmt = con.prepareStatement(query);
-				rs = pstmt.executeQuery();
-				JOptionPane.showMessageDialog(null, "변경되었습니다.");
-
-			} catch (SQLException e) {
-				e.printStackTrace();
+		try {
+			pstmt1 = con.prepareStatement(query2);
+			rs1 = pstmt1.executeQuery();
+			int checkproductNo = 0; //품번이 존재하는지 검사
+			
+			while(rs1.next()) {
+				if(productNo.equals(rs1.getString(1))) {
+					checkproductNo = 1;
+					break;
+				}else
+					checkproductNo = 0;
 			}
-		}
-		
-		// 
-		public void getStoreNameCombobox(JComboBox storeComboBox) {
-			String query = "select distinct sr.s_name from store sr, stock sc "
-					+ "where sr.s_code = sc.s_code and sc.p_qty > 0";
-			try {
-				pstmt = con.prepareStatement(query);
+			
+			if(checkproductNo == 1) {
+				pstmt = con.prepareStatement(query1);
 				rs = pstmt.executeQuery();
-
-				while (rs.next()) {
-					storeComboBox.addItem(rs.getString(1));
-				}
-
-			} catch (SQLException e) {
-				e.printStackTrace();
+				JOptionPane.showMessageDialog(null, "변경되었습니다.");				
+			}else {
+				JOptionPane.showMessageDialog(null, "품번을 확인해주세요.");
 			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
+	}
 
-		public void searchStockColor(JComboBox colorComboBox, JComboBox getStoreComboBox, String productNo) {
-			String query = "select distinct pro.p_color from product pro,stock sc,store sr\r\n"
-					+ "Where pro.p_code = sc.p_code and\r\n" + "sr.s_code = sc.s_code and\r\n" + "pro.p_no =" + productNo
-					+ "\r\n" + "and sr.s_name ='" + getStoreComboBox.getSelectedItem() + "'";
+	//
+	public void getStoreNameCombobox(JComboBox storeComboBox) {
+		String query = "select distinct sr.s_name from store sr, stock sc "
+				+ "where sr.s_code = sc.s_code and sc.p_qty > 0";
+		try {
+			pstmt = con.prepareStatement(query);
+			rs = pstmt.executeQuery();
 
-			try {
-				pstmt = con.prepareStatement(query);
-				rs = pstmt.executeQuery();
-
-				while (rs.next()) {
-					colorComboBox.addItem(rs.getString(1));
-				}
-
-			} catch (SQLException e) {
-				e.printStackTrace();
+			while (rs.next()) {
+				storeComboBox.addItem(rs.getString(1));
 			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
+	}
 
-		public void searchSize(String storeName, String productNo, String productColor, String productSize) {
-			String query = "select sc.p_qty from product pro,stock sc,store sr\r\n" + "Where pro.p_code = sc.p_code and\r\n"
-					+ "sr.s_code=sc.s_code and sr.s_name = '" + storeName + "'and pro.p_no =" + productNo + "and pro.p_color = '"
-					+ productColor + "' and pro.p_size = '" + productSize + "'";
+	public void searchStockColor(JComboBox colorComboBox, JComboBox getStoreComboBox, String productNo) {
+		String query = "select distinct pro.p_color from product pro,stock sc,store sr\r\n"
+				+ "Where pro.p_code = sc.p_code and\r\n" + "sr.s_code = sc.s_code and\r\n" + "pro.p_no =" + productNo
+				+ "\r\n" + "and sr.s_name ='" + getStoreComboBox.getSelectedItem() + "'";
 
-			try {
+		try {
+			pstmt = con.prepareStatement(query);
+			rs = pstmt.executeQuery();
 
-				pstmt = con.prepareStatement(query);
-				rs = pstmt.executeQuery();
+			while (rs.next()) {
+				colorComboBox.addItem(rs.getString(1));
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void searchSize(String storeName, String productNo, String productColor, String productSize) {
+		String query = "select sc.p_qty from product pro,stock sc,store sr\r\n" + "Where pro.p_code = sc.p_code and\r\n"
+				+ "sr.s_code=sc.s_code and sr.s_name = '" + storeName + "'and pro.p_no =" + productNo
+				+ "and pro.p_color = '" + productColor + "' and pro.p_size = '" + productSize + "'";
+
+		try {
+
+			pstmt = con.prepareStatement(query);
+			rs = pstmt.executeQuery();
 
 //				while(rs.next()) {
 //					int qt = rs.getInt(1);
 //					this.qty = qt;
 //				}
 
-				if (rs.next()) {
-					int getStockQuantity = rs.getInt(1);
-					this.stockQuantity = getStockQuantity;
-				} else {
-					this.stockQuantity = 0;
+			if (rs.next()) {
+				int getStockQuantity = rs.getInt(1);
+				this.stockQuantity = getStockQuantity;
+			} else {
+				this.stockQuantity = 0;
+			}
+
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+	}
+
+	public void updateStock(String stockModift, String storeName, String productNo, String productColor) {
+		String[] sizeArray = { "S", "M", "L", "XL" };
+		String updateSizeText = "";
+		String nullSizeText = "";
+
+		for (int i = 0; i < sizeArray.length; i++) {
+			queryResultCount = 0;
+			String query1 = "select p_code from product \r\n" + "where p_no = " + productNo + " and p_color = '"
+					+ productColor + "' \r\n" + "and p_size = '" + sizeArray[i] + "'";
+
+			String query2 = "update stock\r\n" + "set p_qty = " + stockModift + "\r\n"
+					+ "where stock.p_code in(select p_code from product \r\n" + "where p_no = " + productNo
+					+ " and p_color = '" + productColor + "' and p_size = '" + sizeArray[i] + "') \r\n"
+					+ "and stock.s_code in(select s_code from store where s_name = '" + storeName + "')";
+			try {
+				pstmt = con.prepareStatement(query1);
+				rs = pstmt.executeQuery();
+
+				while (rs.next()) {
+					pstmt = con.prepareStatement(query2);
+					ResultSet rs2 = pstmt.executeQuery();
+
+					queryResultCount = 1;
+					updateSizeText = updateSizeText + sizeArray[i] + " ";
 				}
 
+				if (queryResultCount == 0) {
+					// 없는 사이즈일 경우
+					nullSizeText = nullSizeText + sizeArray[i] + " ";
+				}
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 
 		}
+		System.out.println(updateSizeText);
+		JOptionPane.showMessageDialog(null, updateSizeText + "사이즈는 수정되었습니다. \n" + nullSizeText + "사이즈는 상품 등록이 필요합니다.");
+	}
 
-		public void updateStock(String stockModift, String storeName, String productNo, String productColor) {
-			String[] sizeArray = { "S", "M", "L", "XL" };
-			String updateSizeText = "";
-			String nullSizeText = "";
-			
-			for (int i=0; i<sizeArray.length; i++) {
-				queryResultCount = 0;
-				String query1 = "select p_code from product \r\n" + "where p_no = " 
-								+ productNo + " and p_color = '" + productColor
-								+ "' \r\n" + "and p_size = '" + sizeArray[i] + "'";	
-				
-				String query2 = "update stock\r\n" + "set p_qty = " + stockModift + "\r\n"
-						+ "where stock.p_code in(select p_code from product \r\n" 
-						+ "where p_no = " + productNo + " and p_color = '"
-						+ productColor + "' and p_size = '" + sizeArray[i] + "') \r\n"
-						+ "and stock.s_code in(select s_code from store where s_name = '" + storeName + "')";
-				try {
-					pstmt = con.prepareStatement(query1);
-					rs = pstmt.executeQuery();
-					
-					while(rs.next()) {
-						pstmt = con.prepareStatement(query2);
-						ResultSet rs2 = pstmt.executeQuery();
-						
-						queryResultCount = 1;
-						updateSizeText = updateSizeText + sizeArray[i] + " ";
-					}
-					
-					if (queryResultCount == 0) {
-						// 없는 사이즈일 경우
-						nullSizeText = nullSizeText + sizeArray[i] + " ";
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-				
-			}
-			System.out.println(updateSizeText);
-			JOptionPane.showMessageDialog(null, updateSizeText + "사이즈는 수정되었습니다. \n" 
-											+ nullSizeText + "사이즈는 상품 등록이 필요합니다.");
-		}
+	public void createAccount(String id, String password, String personName, String phone, String storeName,
+			String manager, String radio) {
 
-		public void createAccount(String id, String password, String personName, String phone, 
-				String storeName, String manager,String radio) {
+		PreparedStatement pstmt1 = null;
+		ResultSet rs1 = null;
 
-			PreparedStatement pstmt1 = null;
-			ResultSet rs1 = null;
+		PreparedStatement checkHeadId = null;
+		ResultSet checkHeadIdRs = null;
 
-			PreparedStatement checkHeadId = null;
-			ResultSet checkHeadIdRs = null;
+		PreparedStatement checkStoreId = null;
+		ResultSet checkStoreIdRs = null;
 
-			PreparedStatement checkStoreId = null;
-			ResultSet checkStoreIdRs = null;
+		PreparedStatement createScode = null;
+		ResultSet createScodeRs = null;
 
-			PreparedStatement createScode = null;
-			ResultSet createScodeRs = null;
+		PreparedStatement checkScode = null;
+		ResultSet checkScodeRs = null;
 
-			PreparedStatement checkScode = null;
-			ResultSet checkScodeRs = null;
+		String query1;
+		String query2;
+		String checkStoreIdQuery = "select m_id from manager";
+		String checkHeadIdQuery = "select h_id from head";
+		String createScodeQuery = "SELECT round(DBMS_RANDOM.VALUE(1,10)*1000) RANDOM FROM dual";
+		String checkScodeQuery = "select SUBSTR(s_code,2,5) from store";
+		int headCount = 0;
+		int storeCount = 0;
+		int checkManagerCount = 0;
+		String sCode = null;
 
-			String query1;
-			String query2;
-			String checkStoreIdQuery = "select m_id from manager";
-			String checkHeadIdQuery = "select h_id from head";
-			String createScodeQuery = "SELECT round(DBMS_RANDOM.VALUE(1,10)*1000) RANDOM FROM dual";
-			String checkScodeQuery = "select SUBSTR(s_code,2,5) from store";
-			int headCount = 0;
-			int storeCount = 0;
-			int checkManagerCount = 0;
-			String sCode = null;
+		try {
 
-			try {
+			checkScode = con.prepareStatement(checkScodeQuery);
+			checkScodeRs = checkScode.executeQuery();
 
-				checkScode = con.prepareStatement(checkScodeQuery);
-				checkScodeRs = checkScode.executeQuery();
-
-				while (checkScodeRs.next()) {
-					createScode = con.prepareStatement(createScodeQuery);
-					createScodeRs = createScode.executeQuery();
-					while (createScodeRs.next()) {
-						if (checkScodeRs.getString(1) != createScodeRs.getString(1)) {
-							sCode = createScodeRs.getString(1);
-							break;
-						} else {
-							continue;
-						}
-					}
-					if (sCode != null) {
+			while (checkScodeRs.next()) {
+				createScode = con.prepareStatement(createScodeQuery);
+				createScodeRs = createScode.executeQuery();
+				while (createScodeRs.next()) {
+					if (checkScodeRs.getString(1) != createScodeRs.getString(1)) {
+						sCode = createScodeRs.getString(1);
 						break;
 					} else {
 						continue;
 					}
 				}
-			} catch (SQLException e1) {
-				e1.printStackTrace();
+				if (sCode != null) {
+					break;
+				} else {
+					continue;
+				}
 			}
+		} catch (SQLException e1) {
+			e1.printStackTrace();
+		}
 
-			if (radio.equals("본사")) {
-				try {
-					checkHeadId = con.prepareStatement(checkHeadIdQuery);
-					checkHeadIdRs = checkHeadId.executeQuery();
+		if (radio.equals("본사")) {
+			try {
+				checkHeadId = con.prepareStatement(checkHeadIdQuery);
+				checkHeadIdRs = checkHeadId.executeQuery();
 
-					checkStoreId = con.prepareStatement(checkHeadIdQuery);
-					checkStoreIdRs = checkStoreId.executeQuery();
+				checkStoreId = con.prepareStatement(checkHeadIdQuery);
+				checkStoreIdRs = checkStoreId.executeQuery();
 
-					while (checkHeadIdRs.next()) {
-						if (id.equals(checkHeadIdRs.getString(1)) || id.isEmpty()) {
-							headCount = 0;
+				while (checkHeadIdRs.next()) {
+					if (id.equals(checkHeadIdRs.getString(1)) || id.isEmpty()) {
+						headCount = 0;
+						break;
+					} else {
+						headCount = 1;
+					}
+				}
+
+				while (checkStoreIdRs.next()) {
+					if (id.equals(checkStoreIdRs.getString(1))) {
+						storeCount = 0;
+						break;
+					} else {
+						storeCount = 1;
+					}
+				}
+
+				if (headCount == 1 && storeCount == 1) {
+					query1 = "insert into head values('" + id + "','" + password + "','" + personName + "','" + phone
+							+ "')";
+					query2 = "insert into store values('H" + sCode + "',1,'" + storeName + "','" + phone + "','" + id
+							+ "','" + id + "')";
+					pstmt = con.prepareStatement(query1);
+					rs = pstmt.executeQuery();
+
+					pstmt1 = con.prepareStatement(query2);
+					rs1 = pstmt1.executeQuery();
+					JOptionPane.showMessageDialog(null, "생성되었습니다.");
+				} else {
+					JOptionPane.showMessageDialog(null, "이미 존재하는 ID입니다.");
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} else { // 매장
+			try {
+
+				checkHeadId = con.prepareStatement(checkHeadIdQuery);
+				checkHeadIdRs = checkHeadId.executeQuery();
+
+				checkStoreId = con.prepareStatement(checkHeadIdQuery);
+				checkStoreIdRs = checkStoreId.executeQuery();
+
+				while (checkHeadIdRs.next()) {
+					if (id.equals(checkHeadIdRs.getString(1))) {
+						headCount = 0;
+						break;
+					} else {
+						headCount = 1;
+						if (manager.equals(checkHeadIdRs.getString(1))) {
+							checkManagerCount = 1;
 							break;
 						} else {
-							headCount = 1;
+							checkManagerCount = 0;
 						}
 					}
+				}
 
-					while (checkStoreIdRs.next()) {
-						if (id.equals(checkStoreIdRs.getString(1))) {
-							storeCount = 0;
-							break;
-						} else {
-							storeCount = 1;
-						}
+				while (checkStoreIdRs.next()) {
+					if (id.equals(checkStoreIdRs.getString(1))) {
+						storeCount = 0;
+						break;
+					} else {
+						storeCount = 1;
 					}
+				}
 
-					if (headCount == 1 && storeCount == 1) {
-						query1 = "insert into head values('" + id + "','" + password + "','" + personName + "','" + phone + "')";
-						query2 = "insert into store values('H" + sCode + "',1,'" + storeName + "','" + phone + "','" + id
-								+ "','" + id + "')";
+				if (headCount == 1 && storeCount == 1) {
+					if (checkManagerCount == 1) {
+						query1 = "insert into manager values('" + id + "','" + password + "','" + personName + "','"
+								+ phone + "')";
+						query2 = "insert into store values('S" + sCode + "',2,'" + storeName + "','" + phone + "','"
+								+ id + "','" + manager + "')";
 						pstmt = con.prepareStatement(query1);
 						rs = pstmt.executeQuery();
 
@@ -687,135 +798,81 @@ public class DBcon {
 						rs1 = pstmt1.executeQuery();
 						JOptionPane.showMessageDialog(null, "생성되었습니다.");
 					} else {
-						JOptionPane.showMessageDialog(null, "이미 존재하는 ID입니다.");
+						JOptionPane.showMessageDialog(null, "담당자 ID를 확인해주세요.");
 					}
-				} catch (SQLException e) {
-					e.printStackTrace();
+				} else {
+					JOptionPane.showMessageDialog(null, "이미 존재하는 ID입니다.");
 				}
-			} else { // 매장
-				try {
-
-					checkHeadId = con.prepareStatement(checkHeadIdQuery);
-					checkHeadIdRs = checkHeadId.executeQuery();
-
-					checkStoreId = con.prepareStatement(checkHeadIdQuery);
-					checkStoreIdRs = checkStoreId.executeQuery();
-
-					while (checkHeadIdRs.next()) {
-						if (id.equals(checkHeadIdRs.getString(1))) {
-							headCount = 0;
-							break;
-						} else {
-							headCount = 1;
-							if (manager.equals(checkHeadIdRs.getString(1))) {
-								checkManagerCount = 1;
-								break;
-							} else {
-								checkManagerCount = 0;
-							}
-						}
-					}
-
-					while (checkStoreIdRs.next()) {
-						if (id.equals(checkStoreIdRs.getString(1))) {
-							storeCount = 0;
-							break;
-						} else {
-							storeCount = 1;
-						}
-					}
-
-					if (headCount == 1 && storeCount == 1) {
-						if (checkManagerCount == 1) {
-							query1 = "insert into manager values('" + id + "','" + password + "','" + personName + "','" + phone
-									+ "')";
-							query2 = "insert into store values('S" + sCode + "',2,'" + storeName + "','" + phone + "','"
-									+ id + "','" + manager + "')";
-							pstmt = con.prepareStatement(query1);
-							rs = pstmt.executeQuery();
-
-							pstmt1 = con.prepareStatement(query2);
-							rs1 = pstmt1.executeQuery();
-							JOptionPane.showMessageDialog(null, "생성되었습니다.");
-						} else {
-							JOptionPane.showMessageDialog(null, "담당자 ID를 확인해주세요.");
-						}
-					} else {
-						JOptionPane.showMessageDialog(null, "이미 존재하는 ID입니다.");
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-
+			} catch (SQLException e) {
+				e.printStackTrace();
 			}
-
-		}
-
-		public void searchAccount(JTable searchTable, String radio) {
-			String query;
-
-			if(radio.equals("매장+본사")) {
-				try {
-					query = "select s_group,m_id,s_name,h_name,s_phone from store sr, head hd\r\n" + 
-							"where sr.h_id = hd.h_id order by 1";
-					pstmt = con.prepareStatement(query);
-					rs = pstmt.executeQuery();
-					while(rs.next()) {
-						int group = rs.getInt(1);
-						String id = rs.getString(2);
-						String storeName = rs.getString(3);
-						String manager = rs.getString(4);
-						String phone = rs.getString(5);
-						Object data[] = {group,id,storeName,manager,phone};
-						DefaultTableModel model = (DefaultTableModel) searchTable.getModel();
-						model.addRow(data);
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			} else if(radio.equals("매장")) {
-				try {
-					query = "select s_group,m_id,s_name,h_name,s_phone from store sr, head hd\r\n" + 
-							"where sr.h_id = hd.h_id\r\n" + 
-							"and s_group = 1";
-					pstmt = con.prepareStatement(query);
-					rs = pstmt.executeQuery();
-					while(rs.next()) {
-						int group = rs.getInt(1);
-						String id = rs.getString(2);
-						String storeName = rs.getString(3);
-						String manager = rs.getString(4);
-						String phone = rs.getString(5);
-						Object data[] = {group,id,storeName,manager,phone};
-						DefaultTableModel model = (DefaultTableModel) searchTable.getModel();
-						model.addRow(data);
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			} else if(radio.equals("본사")) {
-				try {
-					query = "select s_group,m_id,s_name,h_name,s_phone from store sr, head hd\r\n" + 
-							"where sr.h_id = hd.h_id\r\n" + 
-							"and s_group = 2";
-					pstmt = con.prepareStatement(query);
-					rs = pstmt.executeQuery();
-					while(rs.next()) {
-						int group = rs.getInt(1);
-						String id = rs.getString(2);
-						String storeName = rs.getString(3);
-						String manager = rs.getString(4);
-						String phone = rs.getString(5);
-						Object data[] = {group,id,storeName,manager,phone};
-						DefaultTableModel model = (DefaultTableModel) searchTable.getModel();
-						model.addRow(data);
-					}
-				} catch (SQLException e) {
-					e.printStackTrace();
-				}
-			}
-
 
 		}
 
 	}
+
+	public void searchAccount(JTable searchTable, String radio) {
+		String query;
+
+		if (radio.equals("매장+본사")) {
+			try {
+				query = "select s_group,m_id,s_name,h_name,s_phone from store sr, head hd\r\n"
+						+ "where sr.h_id = hd.h_id order by 1";
+				pstmt = con.prepareStatement(query);
+				rs = pstmt.executeQuery();
+				while (rs.next()) {
+					int group = rs.getInt(1);
+					String id = rs.getString(2);
+					String storeName = rs.getString(3);
+					String manager = rs.getString(4);
+					String phone = rs.getString(5);
+					Object data[] = { group, id, storeName, manager, phone };
+					DefaultTableModel model = (DefaultTableModel) searchTable.getModel();
+					model.addRow(data);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} else if (radio.equals("매장")) {
+			try {
+				query = "select s_group,m_id,s_name,h_name,s_phone from store sr, head hd\r\n"
+						+ "where sr.h_id = hd.h_id\r\n" + "and s_group = 1";
+				pstmt = con.prepareStatement(query);
+				rs = pstmt.executeQuery();
+				while (rs.next()) {
+					int group = rs.getInt(1);
+					String id = rs.getString(2);
+					String storeName = rs.getString(3);
+					String manager = rs.getString(4);
+					String phone = rs.getString(5);
+					Object data[] = { group, id, storeName, manager, phone };
+					DefaultTableModel model = (DefaultTableModel) searchTable.getModel();
+					model.addRow(data);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		} else if (radio.equals("본사")) {
+			try {
+				query = "select s_group,m_id,s_name,h_name,s_phone from store sr, head hd\r\n"
+						+ "where sr.h_id = hd.h_id\r\n" + "and s_group = 2";
+				pstmt = con.prepareStatement(query);
+				rs = pstmt.executeQuery();
+				while (rs.next()) {
+					int group = rs.getInt(1);
+					String id = rs.getString(2);
+					String storeName = rs.getString(3);
+					String manager = rs.getString(4);
+					String phone = rs.getString(5);
+					Object data[] = { group, id, storeName, manager, phone };
+					DefaultTableModel model = (DefaultTableModel) searchTable.getModel();
+					model.addRow(data);
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+
+	}
+
+}
