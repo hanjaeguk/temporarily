@@ -107,7 +107,7 @@ public class NewProReg extends JPanel {
 
 				String checkProductNo = "\\d{7}";
 				String checkProductColor = "[a-zA-Z]{2}";
-				String checkProductSize = "[sml]|(xl)|[SML]|(XL){1,2}";
+				String checkProductSize = "[sml]|(xl)|[SML]|(XL)|(xL)|(Xl){1,2}";
 				String checkProductPrice = "^[1-9]\\d*";
 
 				boolean isProductNo = Pattern.matches(checkProductNo, productNo);

@@ -442,6 +442,11 @@ public class DBcon {
 	}
 
 	/*************************************************************************/
+	/*************************************************************************/
+	/*************************************************************************/
+	/*************************************************************************/
+	/*************************************************************************/
+	/*************************************************************************/
 	// 신상품등록
 	public void insertProduct(String productCode, String productNo, String productColor, String productSize,
 			String productPrice) {
@@ -570,17 +575,40 @@ public class DBcon {
 	}
 
 	public void searchStockColor(JComboBox colorComboBox, JComboBox getStoreComboBox, String productNo) {
-		String query = "select distinct pro.p_color from product pro,stock sc,store sr\r\n"
+		String query1 = "select distinct pro.p_color from product pro,stock sc,store sr\r\n"
 				+ "Where pro.p_code = sc.p_code and\r\n" + "sr.s_code = sc.s_code and\r\n" + "pro.p_no =" + productNo
 				+ "\r\n" + "and sr.s_name ='" + getStoreComboBox.getSelectedItem() + "'";
+		String query2 = "select p_no from product"; // 품번검사
+		PreparedStatement pstmt1 = null;
+		ResultSet rs1 = null;
+		
+
 
 		try {
-			pstmt = con.prepareStatement(query);
-			rs = pstmt.executeQuery();
-
-			while (rs.next()) {
-				colorComboBox.addItem(rs.getString(1));
+			pstmt1 = con.prepareStatement(query2);
+			rs1 = pstmt1.executeQuery();
+			
+			int checkproductNo = 0; //품번이 존재하는지 검사
+			
+			while(rs1.next()) {
+				if(productNo.equals(rs1.getString(1))) {
+					checkproductNo = 1;
+					break;
+				}else
+					checkproductNo = 0;
 			}
+			
+			if(checkproductNo == 1) {
+				pstmt = con.prepareStatement(query1);
+				rs = pstmt.executeQuery();				
+				while (rs.next()) {
+					colorComboBox.addItem(rs.getString(1));
+				}
+			}else {
+				JOptionPane.showMessageDialog(null, "존재하지 않는 품번입니다.");				
+
+			}
+
 
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -619,6 +647,7 @@ public class DBcon {
 		String[] sizeArray = { "S", "M", "L", "XL" };
 		String updateSizeText = "";
 		String nullSizeText = "";
+		
 
 		for (int i = 0; i < sizeArray.length; i++) {
 			queryResultCount = 0;
@@ -639,7 +668,8 @@ public class DBcon {
 
 					queryResultCount = 1;
 					updateSizeText = updateSizeText + sizeArray[i] + " ";
-				}
+				} 
+		
 
 				if (queryResultCount == 0) {
 					// 없는 사이즈일 경우
@@ -648,7 +678,6 @@ public class DBcon {
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
-
 		}
 		System.out.println(updateSizeText);
 		JOptionPane.showMessageDialog(null, updateSizeText + "사이즈는 수정되었습니다. \n" + nullSizeText + "사이즈는 상품 등록이 필요합니다.");
@@ -821,7 +850,13 @@ public class DBcon {
 				pstmt = con.prepareStatement(query);
 				rs = pstmt.executeQuery();
 				while (rs.next()) {
-					int group = rs.getInt(1);
+					int checkGroup = rs.getInt(1);
+					String group;
+					if(checkGroup == 1) {
+						group = "본사";
+					}else {
+						group = "매장";
+					}
 					String id = rs.getString(2);
 					String storeName = rs.getString(3);
 					String manager = rs.getString(4);
@@ -836,11 +871,17 @@ public class DBcon {
 		} else if (radio.equals("매장")) {
 			try {
 				query = "select s_group,m_id,s_name,h_name,s_phone from store sr, head hd\r\n"
-						+ "where sr.h_id = hd.h_id\r\n" + "and s_group = 1";
+						+ "where sr.h_id = hd.h_id\r\n" + "and s_group = 2";
 				pstmt = con.prepareStatement(query);
 				rs = pstmt.executeQuery();
 				while (rs.next()) {
-					int group = rs.getInt(1);
+					int checkGroup = rs.getInt(1);
+					String group;
+					if(checkGroup == 1) {
+						group = "본사";
+					}else {
+						group = "매장";
+					}
 					String id = rs.getString(2);
 					String storeName = rs.getString(3);
 					String manager = rs.getString(4);
@@ -855,11 +896,17 @@ public class DBcon {
 		} else if (radio.equals("본사")) {
 			try {
 				query = "select s_group,m_id,s_name,h_name,s_phone from store sr, head hd\r\n"
-						+ "where sr.h_id = hd.h_id\r\n" + "and s_group = 2";
+						+ "where sr.h_id = hd.h_id\r\n" + "and s_group = 1";
 				pstmt = con.prepareStatement(query);
 				rs = pstmt.executeQuery();
 				while (rs.next()) {
-					int group = rs.getInt(1);
+					int checkGroup = rs.getInt(1);
+					String group;
+					if(checkGroup == 1) {
+						group = "본사";
+					}else {
+						group = "매장";
+					}
 					String id = rs.getString(2);
 					String storeName = rs.getString(3);
 					String manager = rs.getString(4);
